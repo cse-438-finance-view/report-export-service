@@ -10,6 +10,12 @@ import (
 	_ "github.com/burakmike/report-export-service/docs"
 )
 
+// @title Report Export Service API
+// @version 1.0
+// @description This is a report export service API
+// @host localhost:4444
+// @BasePath /api/v1
+
 func main() {
 	r := gin.Default()
 
@@ -23,6 +29,14 @@ func main() {
 	r.Run(":4444")
 }
 
+// HelloWorld godoc
+// @Summary Hello world endpoint
+// @Description Returns a hello world message
+// @Tags hello
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Router /hello [get]
 func HelloWorld(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Hello World",
