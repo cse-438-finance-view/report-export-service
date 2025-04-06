@@ -2,18 +2,12 @@ FROM golang:1.22-alpine AS build
 
 WORKDIR /app
 
-# Install Swagger
-RUN go install github.com/swaggo/swag/cmd/swag@latest
-
 # Copy go mod and sum files
 COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy source code
 COPY . .
-
-# Generate Swagger docs
-RUN /go/bin/swag init
 
 # Build the application
 RUN go build -o main .
@@ -25,9 +19,18 @@ WORKDIR /app
 
 # Copy the binary from the build stage
 COPY --from=build /app/main .
-# Copy the Swagger docs
-COPY --from=build /app/docs ./docs
 
-EXPOSE 4444
+# Install ca-certificates for HTTPS connections
+RUN apk --no-cache add ca-certificates
 
+# Create non-root user for security
+RUN adduser -D -g '' appuser
+
+# Set the ownership of the app directory
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# The environment variables will be provided at runtime
 CMD ["./main"]

@@ -1,44 +1,25 @@
 package main
 
 import (
-	"net/http"
+	"log"
 
-	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
-
-	_ "github.com/burakmike/report-export-service/docs"
+	"github.com/burakmike/report-export-service/pkg/service"
 )
 
-// @title Report Export Service API
-// @version 1.0
-// @description This is a report export service API
-// @host localhost:4444
-// @BasePath /api/v1
-
 func main() {
-	r := gin.Default()
-
-	v1 := r.Group("/api/v1")
-	{
-		v1.GET("/hello", HelloWorld)
+	log.Println("Starting Report Export Service...")
+	
+	// Yeni hizmet oluştur
+	svc := service.NewService()
+	
+	// Hizmeti başlat
+	err := svc.Start()
+	if err != nil {
+		log.Fatalf("Failed to start service: %v", err)
 	}
-
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	r.Run(":4444")
-}
-
-// HelloWorld godoc
-// @Summary Hello world endpoint
-// @Description Returns a hello world message
-// @Tags hello
-// @Accept json
-// @Produce json
-// @Success 200 {object} map[string]string
-// @Router /hello [get]
-func HelloWorld(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello World",
-	})
+	
+	log.Println("Report Export Service started successfully")
+	
+	// Kapatma sinyali bekle
+	svc.WaitForSignal()
 }

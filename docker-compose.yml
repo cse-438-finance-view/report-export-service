@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  report-export-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: report-export-service
+    env_file:
+      - .env
+    restart: on-failure
+    network_mode: "bridge"  
