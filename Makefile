@@ -1,4 +1,4 @@
-.PHONY: build run docker-build docker-run clean
+.PHONY: build run docker-build docker-run clean deps test help publish-test-report
 
 # Build the application
 build:
@@ -33,6 +33,12 @@ deps:
 test:
 	go test -v ./...
 
+# Publish a sample report event using the example script
+# Requires .env file to be present for RabbitMQ connection details
+publish-test-report:
+	@echo "Publishing sample portfolio report event..."
+	go run examples/publish_sample_report.go
+
 # Help message
 help:
 	@echo "Available commands:"
@@ -43,6 +49,7 @@ help:
 	@echo "  make clean         - Clean build artifacts"
 	@echo "  make deps          - Get dependencies"
 	@echo "  make test          - Run tests"
+	@echo "  make publish-test-report - Publish a sample portfolio report event to RabbitMQ"
 	@echo "  make help          - Show this help message"
 
 default: help 

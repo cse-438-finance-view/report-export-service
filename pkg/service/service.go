@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/burakmike/report-export-service/pkg/handler"
 	"github.com/burakmike/report-export-service/pkg/rabbitmq"
 	"github.com/burakmike/report-export-service/pkg/report"
+	_ "github.com/lib/pq"
 	"github.com/streadway/amqp"
 )
 
@@ -29,6 +31,7 @@ type Service struct {
 	Context      context.Context
 	CancelFunc   context.CancelFunc
 	PDFGenerator *report.PDFGenerator
+	DB           *sql.DB
 }
 
 // NewService yeni bir hizmet oluşturur ve bağımlılıkları kurar
@@ -67,7 +70,7 @@ func NewService() *Service {
 // SetupHandlers tüm event işleyicileri kaydeder
 func (s *Service) SetupHandlers() {
 	// Portfolio rapor işleyicisi
-	portfolioHandler := handler.NewPortfolioReportHandler()
+	portfolioHandler := handler.NewPortfolioReportHandler(s.DB, s.PDFGenerator)
 	s.Registry.RegisterHandler(portfolioHandler)
 	
 	// İleride başka işleyiciler de buraya eklenebilir
@@ -79,7 +82,36 @@ func (s *Service) SetupHandlers() {
 func (s *Service) Start() error {
 	log.Println("Starting service...")
 
-	// İşleyicileri kur
+	// Initialize database connection
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		s.Config.DBUser,
+		s.Config.DBPassword,
+		s.Config.DBHost,
+		s.Config.DBPort,
+		s.Config.DBName,
+	)
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return fmt.Errorf("failed to open database connection: %w", err)
+	}
+	if err := db.Ping(); err != nil {
+		return fmt.Errorf("failed to ping database: %w", err)
+	}
+	s.DB = db
+
+	// Create reports table if not exists
+	createTableQuery := `
+	CREATE TABLE IF NOT EXISTS reports (
+		id SERIAL PRIMARY KEY,
+		created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+		user_id TEXT,
+		type TEXT NOT NULL
+	);`
+	if _, err := s.DB.Exec(createTableQuery); err != nil {
+		return fmt.Errorf("failed to create reports table: %w", err)
+	}
+	
+	// Setup event handlers with DB connection
 	s.SetupHandlers()
 
 	// Raporlar dizinini oluştur (yoksa)
@@ -91,7 +123,7 @@ func (s *Service) Start() error {
 	}
 	
 	// RabbitMQ'ya bağlan
-	err := s.RabbitMQ.Connect()
+	err = s.RabbitMQ.Connect()
 	if err != nil {
 		return err
 	}
