@@ -126,7 +126,7 @@ The service can be configured using environment variables:
 | `RABBITMQ_PASSWORD` | RabbitMQ password | `guest` |
 | `RABBITMQ_VHOST` | RabbitMQ virtual host | `/` |
 | `DB_HOST` | PostgreSQL host | `db` |
-| `DB_PORT` | PostgreSQL port | `5432` |
+| `DB_PORT` | PostgreSQL port | `4450` |
 | `DB_USER` | PostgreSQL username | `postgres` |
 | `DB_PASSWORD` | PostgreSQL password | `postgres` |
 | `DB_NAME` | PostgreSQL database name | `reportdb` |
@@ -162,7 +162,7 @@ RABBITMQ_VHOST=/
 
 # Postgres
 DB_HOST=db
-DB_PORT=5432
+DB_PORT=4450
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=reportdb

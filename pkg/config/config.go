@@ -31,7 +31,7 @@ func LoadConfigFromEnv() Config {
 
 		// Load database configuration
 		DBHost:           getEnv("DB_HOST", "localhost"),
-		DBPort:           getEnv("DB_PORT", "5432"),
+		DBPort:           getEnv("DB_PORT", "4450"),
 		DBUser:           getEnv("DB_USER", "postgres"),
 		DBPassword:       getEnv("DB_PASSWORD", "postgres"),
 		DBName:           getEnv("DB_NAME", "reportdb"),
