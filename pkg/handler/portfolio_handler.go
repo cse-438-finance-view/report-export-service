@@ -58,7 +58,6 @@ func (h *PortfolioReportHandler) Handle(ctx context.Context, evt event.BaseEvent
 		filePath, err := h.PDFGenerator.GeneratePortfolioReport(payload.Portfolios)
 		if err != nil {
 			log.Printf("Error generating PDF report: %v", err)
-			// Hatayı yut ve devam et - rapor oluşturulamazsa da işlem başarılı sayılabilir
 		} else {
 			log.Printf("PDF report successfully generated at: %s", filePath)
 		}

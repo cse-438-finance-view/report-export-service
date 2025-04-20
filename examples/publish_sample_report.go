@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os" // Required for getEnv, assuming it might be used, though LoadConfigFromEnv is used here
+	"os"
 
 	"github.com/burakmike/report-export-service/pkg/config"
 	"github.com/burakmike/report-export-service/pkg/event"
@@ -13,17 +13,13 @@ import (
 
 func main() {
 	log.Println("Publisher starting...")
-	// Load config (uses the same environment variables as the service)
-	// Note: This will use default RABBITMQ_HOST if not set in env
 	cfg := config.LoadConfigFromEnv()
 
-	// Override host if specifically provided via env for host execution
 	if hostOverride := os.Getenv("RABBITMQ_HOST"); hostOverride != "" {
 		log.Printf("Overriding RabbitMQ host from env: %s", hostOverride)
 		cfg.RabbitMQHost = hostOverride
 	}
 
-	// Connect to RabbitMQ
 	connStr := fmt.Sprintf("amqp://%s:%s@%s:%s/%s",
 		cfg.RabbitMQUser,
 		cfg.RabbitMQPassword,
@@ -47,32 +43,28 @@ func main() {
 	defer ch.Close()
 	log.Println("RabbitMQ channel opened.")
 
-	// Create sample portfolio data
 	portfolios := event.CreateSamplePortfolios()
 	log.Printf("Created %d sample portfolios.", len(portfolios))
 
-	// Create the event
 	reportEvent, err := event.NewPortfolioReportEvent(portfolios)
 	if err != nil {
 		log.Fatalf("Failed to create report event: %v", err)
 	}
 
-	// Marshal the event to JSON
 	eventData, err := json.Marshal(reportEvent)
 	if err != nil {
 		log.Fatalf("Failed to marshal event: %v", err)
 	}
 
-	// Publish the event
-	routingKey := string(event.PortfolioReport) // Use the correct routing key
-	exchangeName := "investment_exchange"       // Use the correct exchange
+	routingKey := string(event.PortfolioReport)
+	exchangeName := "investment_exchange"
 	log.Printf("Publishing event to exchange '%s' with routing key '%s'...", exchangeName, routingKey)
 
 	err = ch.Publish(
 		exchangeName,
 		routingKey,
-		false, // mandatory
-		false, // immediate
+		false,
+		false,
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        eventData,
