@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
@@ -12,19 +13,14 @@ import (
 
 // PortfolioReportHandler portfolio.report olaylarını işleyen yapı
 type PortfolioReportHandler struct {
+	DB           *sql.DB
 	PDFGenerator *report.PDFGenerator
 }
 
 // NewPortfolioReportHandler yeni bir portfolio report handler oluşturur
-func NewPortfolioReportHandler() *PortfolioReportHandler {
-	// PDF Generator oluştur
-	pdfGenerator, err := report.NewPDFGenerator("reports")
-	if err != nil {
-		log.Printf("Warning: Failed to create PDF generator: %v. PDF reports will not be generated.", err)
-		return &PortfolioReportHandler{PDFGenerator: nil}
-	}
-	
+func NewPortfolioReportHandler(db *sql.DB, pdfGenerator *report.PDFGenerator) *PortfolioReportHandler {
 	return &PortfolioReportHandler{
+		DB:           db,
 		PDFGenerator: pdfGenerator,
 	}
 }
@@ -62,7 +58,6 @@ func (h *PortfolioReportHandler) Handle(ctx context.Context, evt event.BaseEvent
 		filePath, err := h.PDFGenerator.GeneratePortfolioReport(payload.Portfolios)
 		if err != nil {
 			log.Printf("Error generating PDF report: %v", err)
-			// Hatayı yut ve devam et - rapor oluşturulamazsa da işlem başarılı sayılabilir
 		} else {
 			log.Printf("PDF report successfully generated at: %s", filePath)
 		}
@@ -72,6 +67,19 @@ func (h *PortfolioReportHandler) Handle(ctx context.Context, evt event.BaseEvent
 	
 	// Rapor oluşturma işleminin tamamlandığını belirt
 	log.Printf("Portfolio report processing completed for %d portfolios", len(payload.Portfolios))
+	
+	// Save report records in database
+	if h.DB != nil {
+		for _, portfolio := range payload.Portfolios {
+			_, err := h.DB.ExecContext(ctx,
+				"INSERT INTO reports(user_id, type) VALUES($1, $2)",
+				portfolio.UserID, string(evt.EventType),
+			)
+			if err != nil {
+				log.Printf("Error saving report record to database: %v", err)
+			}
+		}
+	}
 	
 	return nil
 } 

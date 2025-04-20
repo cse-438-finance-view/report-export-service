@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:13
+    container_name: report-export-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+    networks:
+      - reportnet
+
   report-export-service:
     build:
       context: .
@@ -8,5 +23,15 @@ services:
     container_name: report-export-service
     env_file:
       - .env
+    depends_on:
+      - db
     restart: on-failure
-    network_mode: "bridge"  
+    networks:
+      - reportnet
+
+volumes:
+  db-data:
+
+networks:
+  reportnet:
+    driver: bridge  
